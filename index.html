@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parcial 1 (Versión B) · Buscador de recetas (Bootstrap 5 + jQuery + AJAX + localStorage)</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <!-- Tu CSS va después del de Bootstrap, para poder sobreescribirlo si lo necesitas -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===================== NAVBAR (ya resuelta) ===================== -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">🍲 Buscador de recetas</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarContenido"
+        aria-controls="navbarContenido"
+        aria-expanded="false"
+        aria-label="Mostrar/ocultar navegación">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarContenido">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#buscador">Buscador</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#resultado-section">Resultado</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <header class="mb-4">
+      <h1 class="h3">Buscá una receta</h1>
+      <p class="text-muted">
+        Los datos vienen de <a href="https://www.themealdb.com/api.php" target="_blank" rel="noopener">TheMealDB</a>
+        (pública, usa la key de prueba <code>1</code> ya incluida en las URLs). El formulario, la navbar y el modal
+        ya tienen su estructura — completá la lógica en los bloques marcados <code>TODO</code> dentro del
+        <code>&lt;script&gt;</code>.
+      </p>
+    </header>
+
+    <!-- ===================== SECCIÓN 1: BUSCADOR (estructura resuelta) ===================== -->
+    <section id="buscador" class="mb-5">
+      <h2 class="h5">1. Buscador</h2>
+
+      <form id="form-buscar" class="row g-2 align-items-center" novalidate>
+        <div class="col-auto flex-grow-1">
+          <label for="input-receta" class="visually-hidden">Nombre de la receta</label>
+          <input
+            type="text"
+            class="form-control"
+            id="input-receta"
+            placeholder="Ej: arrabiata, o carbonara">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-danger" id="btn-buscar">Buscar</button>
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-secondary" id="btn-borrar-guardado">
+            Borrar búsqueda guardada
+          </button>
+        </div>
+      </form>
+
+      <div id="buscando" class="d-flex align-items-center gap-2 text-muted mt-3">
+        <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+        <span>Buscando…</span>
+      </div>
+
+      <div id="mensaje-error" class="alert alert-danger mt-3" role="alert">
+        No se encontró ninguna receta con ese nombre. Probá con otro término.
+      </div>
+    </section>
+
+    <!-- ===================== SECCIÓN 2: RESULTADO (TODO 1 / TODO 3 pintan acá adentro) ===================== -->
+    <section id="resultado-section" class="mb-5">
+      <h2 class="h5">2. Resultado</h2>
+      <div id="resultado" class="row row-cols-1 row-cols-md-3 g-4">
+        <!-- TODO 1: acá va la card de Bootstrap que armes con jQuery -->
+        <!-- TODO 3: si hay algo en localStorage, esta card se pinta acá al recargar la página -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== MODAL DE DETALLE (estructura lista, contenido lo llena el TODO 2) ===================== -->
+  <div class="modal fade" id="modalDetalle" tabindex="-1" aria-labelledby="modalDetalleTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleTitulo">Nombre de la receta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <img id="modalDetalle-imagen" src="" alt="" class="img-fluid rounded mb-2">
+              <p class="mb-1"><strong>Origen:</strong> <span id="modalDetalle-origen"></span></p>
+              <p class="mb-1"><strong>Ingredientes:</strong></p>
+              <ul id="modalDetalle-ingredientes" class="small"></ul>
+            </div>
+            <div class="col-md-8">
+              <p class="mb-1"><strong>Instrucciones:</strong></p>
+              <p id="modalDetalle-instrucciones" class="small"></p>
+              <!-- TODO 4 (bonus): agregar aquí las recetas similares desde filter.php -->
+              <div id="modalDetalle-similares"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODO (CSS): agregar un <footer> semántico con tu nombre y el año actual -->
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ==================================================================
+    // Guardamos la última receta buscada para no volver a pedirla a la
+    // API cuando se abra el modal de detalle (TODO 2), y para poder
+    // guardarla en localStorage (TODO 3).
+    // ==================================================================
+    let ultimaRecetaBuscada = null;
+    const CLAVE_LOCALSTORAGE = 'ultimaReceta';
+
+    $('#buscando').hide();
+    $('#mensaje-error').hide();
+
+    // ==================================================================
+    // TODO 1 (obligatorio) — Al enviar el formulario #form-buscar:
+    //
+    //   1. Prevenir el comportamiento por defecto del form.
+    //   2. Leer el valor de #input-receta. Si está vacío, mostrar el
+    //      error de validación y no llamar a la API.
+    //   3. Mostrar #buscando y ocultar #mensaje-error y #resultado
+    //      mientras se espera la respuesta.
+    //   4. Hacer $.ajax GET a:
+    //      https://www.themealdb.com/api/json/v1/1/search.php?s=<valor-del-input>
+    //   5. .done(respuesta): OJO — esta API responde con éxito HTTP
+    //      aunque no encuentre nada (respuesta.meals será null en ese
+    //      caso). Si respuesta.meals es null, mostrar #mensaje-error.
+    //      Si trae resultados, guardar respuesta.meals[0] en
+    //      ultimaRecetaBuscada, renderizar la card en #resultado
+    //      (imagen strMealThumb, nombre strMeal, badge con
+    //      strCategory, y un botón "btn-ver-detalle") y guardarla
+    //      también en localStorage (ver TODO 3).
+    //   6. .fail(): mostrar #mensaje-error (esto solo pasa si falla la
+    //      conexión, no si "no hay resultados").
+    //   7. .always(): ocultar #buscando.
+    // ==================================================================
+   $('#form-buscar').on('submit', function (evento) {
+
+  
+  
+  // 1. Prevenir el comportamiento por defecto del formulario
+
+  evento.preventDefault();
+
+  
+  // 2. Leer el valor de #input-receta. Si está vacío, mostrar el
+  //error de validación y no llamar a la API.
+ 
+  const nombre = $('#input-receta').val().trim();
+
+  if (nombre === '') {
+    $('#mensaje-error')
+      .text('Ingresá el nombre de una receta.')
+      .show();
+
+    return;
+  }
+
+   // 3. Mostrar #buscando y ocultar #mensaje-error y #resultado
+    //   mientras se espera la respuesta.
+  $('#buscando').show();
+  $('#mensaje-error').hide();
+  $('#resultado').hide();
+
+
+  //   4. Hacer $.ajax GET a:
+  //      https://www.themealdb.com/api/json/v1/1/search.php?s=<valor-del-input>
+  $.ajax({
+    url: 'https://www.themealdb.com/api/json/v1/1/search.php?s=' + nombre,
+    method: 'GET',
+    dataType: 'json'
+  })
+ 
+  //   5. .done(respuesta):
+
+  .done((respuesta) => {
+
+    if (respuesta.meals === null) {
+
+      $('#mensaje-error')
+        .text('No se encontró ninguna receta con ese nombre. Probá con otro término.')
+        .show();
+
+      return;
+    }
+
+    const receta = respuesta.meals[0];
+    ultimaRecetaBuscada = receta;
+
+    localStorage.setItem(
+      CLAVE_LOCALSTORAGE,
+      JSON.stringify(receta)
+    );
+
+
+    //  card de Bootstrap
+    const $card = $(`
+      <div class="col">
+
+        <div class="card h-100">
+
+          <img
+            src="${receta.strMealThumb}"
+            class="card-img-top"
+            alt="${receta.strMeal}"
+          >
+
+          <div class="card-body">
+
+            <h5 class="card-title">
+              ${receta.strMeal}
+            </h5>
+
+            <span class="badge bg-danger mb-3">
+              ${receta.strCategory}
+            </span>
+
+            <br>
+
+            <button
+              type="button"
+              class="btn btn-primary btn-ver-detalle">
+              Ver detalle
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `);
+
+    $('#resultado')
+      .html($card)
+      .show();
+
+  })
+
+});
+
+    // ==================================================================
+    // TODO 2 (obligatorio) — Abrir el modal de detalle.
+    //
+    // La card de #resultado se crea dinámicamente, así que hay que
+    // delegar el evento sobre un contenedor que exista desde el
+    // principio:
+    //
+    //   $('#resultado').on('click', '.btn-ver-detalle', function () { ... });
+    //
+    // Dentro del handler:
+    //   1. Usar ultimaRecetaBuscada (ya tenés los datos).
+    //   2. Llenar #modalDetalleTitulo, #modalDetalle-imagen (src y alt),
+    //      #modalDetalle-origen (strArea) y #modalDetalle-instrucciones
+    //      (strInstructions).
+    //   3. Recorrer strIngredient1..strIngredient20 junto con
+    //      strMeasure1..strMeasure20, ignorar los vacíos, y armar un
+    //      <li> por cada ingrediente dentro de #modalDetalle-ingredientes.
+    //   4. Mostrar el modal.
+    //
+    // ⚠️ Ojo: Bootstrap 5 no depende de jQuery para sus componentes.
+    // $('#modalDetalle').modal('show') (sintaxis de Bootstrap 4) no va
+    // a funcionar. Hay que usar la API nativa de Bootstrap 5:
+    //
+    //   new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+    // ==================================================================
+
+    // ==================================================================
+    // TODO 3 (Obligatorio) — Persistencia con localStorage.
+    //
+    //   1. Dentro del .done() del TODO 1, cuando la búsqueda sea
+    //      exitosa, además de guardar la receta en ultimaRecetaBuscada,
+    //      guardala en localStorage con:
+    //      localStorage.setItem(CLAVE_LOCALSTORAGE, JSON.stringify(receta))
+    //   2. Fuera de cualquier evento (para que corra apenas se abre la
+    //      página), revisá si hay algo guardado:
+    //      const guardado = localStorage.getItem(CLAVE_LOCALSTORAGE);
+    //      Si hay algo, hacé JSON.parse, guardalo en
+    //      ultimaRecetaBuscada, y renderizá la card en #resultado con
+    //      esos datos SIN llamar a la API.
+    //   3. Conectá el botón #btn-borrar-guardado para que borre la
+    //      clave de localStorage (localStorage.removeItem) y limpie
+    //      #resultado.
+    // ==================================================================
+
+    // ==================================================================
+    // TODO 4 (extra) — AJAX encadenado.
+    //
+    // En el handler del TODO 2, antes de mostrar el modal (o después,
+    // rellenando #modalDetalle-similares de forma asíncrona), hacé un
+    // segundo $.ajax a:
+    //   https://www.themealdb.com/api/json/v1/1/filter.php?c=<strCategory>
+    // y mostrá el nombre de otras 3 recetas de esa categoría (evitando
+    // repetir la que ya se está mostrando). Esto practica encadenar dos
+    // llamadas AJAX (la segunda depende del resultado de la primera).
+    // ==================================================================
+  </script>
+</body>
+</html>
