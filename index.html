@@ -218,7 +218,7 @@
 
     const receta = respuesta.meals[0];
     ultimaRecetaBuscada = receta;
-
+ 
     localStorage.setItem(
       CLAVE_LOCALSTORAGE,
       JSON.stringify(receta)
@@ -318,8 +318,9 @@
    
     $('#resultado').on('click', '.btn-ver-detalle', function () {
 
-    // 1. Usar ultimaRecetaBuscada (ya tenés los datos).
+    // 1. Usar ultimaRecetaBuscada 
      const receta = ultimaRecetaBuscada;
+     
 
      //   2. Llenar Datos del modal
   $('#modalDetalleTitulo').text(receta.strMeal);
@@ -385,7 +386,65 @@ new bootstrap.Modal(
     //      clave de localStorage (localStorage.removeItem) y limpie
     //      #resultado.
     // ==================================================================
+  
 
+const guardado = localStorage.getItem(CLAVE_LOCALSTORAGE);
+
+if (guardado) {
+
+  const receta = JSON.parse(guardado);
+
+  ultimaRecetaBuscada = receta;
+
+  const $card = $(
+`
+    <div class="col">
+
+      <div class="card h-100">
+
+        <img
+          src="${receta.strMealThumb}"
+          class="card-img-top"
+          alt="${receta.strMeal}"
+        >
+
+        <div class="card-body">
+
+          <h5 class="card-title">
+            ${receta.strMeal}
+          </h5>
+
+          <span class="badge bg-danger mb-3">
+            ${receta.strCategory}
+          </span>
+
+          <br>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-ver-detalle">
+            Ver detalle
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  
+
+  `);
+  
+ $('#btn-borrar-guardado').on('click', function () {
+  
+  localStorage.removeItem(CLAVE_LOCALSTORAGE);
+  $('#resultado').empty();
+ }
+
+ )
+  
+
+  }
     // ==================================================================
     // TODO 4 (extra) — AJAX encadenado.
     //
